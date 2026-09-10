@@ -1971,6 +1971,13 @@ img{max-width:100%;height:auto;display:block}
     const ajuda = document.getElementById('horario-ajuda');
     const abertura = horaParaMinutos(String(SITE_INFO.horario_abertura || '07:00'));
     const fechamento = horaParaMinutos(String(SITE_INFO.horario_fechamento || '23:00'));
+    
+console.log('DATA:', data);
+console.log('DURAÇÃO:', duracao);
+console.log('ABERTURA:', SITE_INFO.horario_abertura);
+console.log('FECHAMENTO:', SITE_INFO.horario_fechamento);
+console.log('ABERTURA EM MINUTOS:', abertura);
+console.log('FECHAMENTO EM MINUTOS:', fechamento);
     const passo = 60;
 
     // Antes de escolher o dia, não mostramos nenhum horário.
