@@ -1208,8 +1208,10 @@ img{max-width:100%;height:auto;display:block}
       const method=(options.method||'GET').toUpperCase();
       const tabela=supabaseClient.from('reservas');
       if (method === 'GET') {
-        let consulta=tabela.select('*').order('data',{ascending:true}).order('horario',{ascending:true});
-        if (query.quadra_id) consulta=consulta.eq('quadra_id',query.quadra_id);
+let consulta = tabela
+  .select('*')
+  .order('data', { ascending: true })
+  .order('hora_inicio', { ascending: true });        if (query.quadra_id) consulta=consulta.eq('quadra_id',query.quadra_id);
         if (query.data) consulta=consulta.eq('data',query.data);
         const {data,error}=await consulta;
         if (error) throw error;
