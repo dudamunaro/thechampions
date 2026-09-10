@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Champions Laporte — Administração</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://owcdcpdzifcpafmtjhrw.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable__xOvIL5F1tAUNO_hN3f7TA_EZx0ejrE';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+</script>
+<style>
+:root{
+  --navy:#08102b;--navy2:#111d4a;--blue:#1f4f9b;--gold:#8fb8f0;
+  --bg:#eef1f6;--white:#fff;--text:#14161f;--muted:#697080;
+  --green:#16824b;--red:#b3261e;--orange:#b86b00;--line:#dce2ec;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+.hidden{display:none!important}
+
+/* LOGIN */
+#loginView{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#050816,#111f52)}
+.login-card{width:min(430px,100%);background:#fff;border-radius:22px;padding:34px;box-shadow:0 25px 70px #0006}
+.logo{font-size:25px;font-weight:800;color:var(--navy);margin-bottom:8px}
+.logo span{color:var(--blue)}
+.login-card p{color:var(--muted);margin-bottom:24px}
+.field{margin-bottom:15px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#4d5565}
+.field input,.field select{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1f4f9b18}
+.primary{border:0;background:var(--navy);color:#fff;padding:12px 17px;border-radius:10px;cursor:pointer;font-weight:700}
+.primary:hover{background:var(--blue)}
+.login-error{color:var(--red);font-size:13px;margin-top:12px}
+
+/* APP */
+.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+.sidebar{background:var(--navy);color:#fff;padding:24px 16px;position:sticky;top:0;height:100vh}
+.side-logo{font-size:20px;font-weight:800;padding:4px 10px 25px}
+.side-logo span{color:var(--gold)}
+.menu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#cbd2e6;padding:13px 12px;border-radius:10px;margin:4px 0;cursor:pointer}
+.menu button:hover,.menu button.active{background:#ffffff12;color:var(--gold)}
+.logout{position:absolute;bottom:20px;left:16px;right:16px;background:#ffffff12!important}
+.main{min-width:0}.topbar{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5}
+.topbar h1{font-size:21px}.admin-name{color:var(--muted);font-size:13px}
+.content{padding:28px;max-width:1500px;margin:auto}
+.section{display:none}.section.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:19px}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.card .value{font-size:27px;font-weight:800;margin-top:8px}.green{color:var(--green)}.red{color:var(--red)}.gold{color:#426a9e}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.panel h2{font-size:17px}.muted{color:var(--muted);font-size:13px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:12px 10px;border-bottom:1px solid #edf0f5;text-align:left;font-size:13px}
+th{font-size:11px;color:var(--muted);text-transform:uppercase}
+.badge{display:inline-flex;padding:5px 9px;border-radius:99px;font-size:11px;font-weight:800}
+.pendente{background:#fff1d6;color:#9a5b00}.confirmada{background:#ddf6e9;color:#08713f}.recusada{background:#fde2e2;color:#a31919}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.btn{border:0;border-radius:8px;padding:7px 10px;cursor:pointer;font-weight:700;font-size:12px}
+.ok{background:#ddf6e9;color:#08713f}.no{background:#fde2e2;color:#a31919}.edit{background:#e8eef9;color:#234f88}.delete{background:#f3f4f6;color:#555}
+.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.calendar-head button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;cursor:pointer}
+.cal-title{font-weight:800}.week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.week div{font-size:11px;text-align:center;color:var(--muted);padding:6px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.day{min-height:90px;background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:7px;cursor:pointer}
+.day:hover{border-color:var(--blue)}.day.muted-day{opacity:.4}
+.day-num{font-weight:800;font-size:12px}.event{margin-top:6px;border-radius:6px;padding:4px;font-size:10px;background:#e4ecfb;color:#173e7a;overflow:hidden}
+.event.confirmada{background:#dcf5e8;color:#08713f}.event.pendente{background:#fff0d4;color:#945900}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.full{grid-column:1/-1}
+.expense-total{font-size:22px;font-weight:800}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap}.toolbar input,.toolbar select{padding:10px;border:1px solid var(--line);border-radius:9px}
+.empty{text-align:center;color:var(--muted);padding:25px}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:700px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:static}.menu{display:flex;overflow:auto}.menu button{white-space:nowrap}.logout{position:static;margin-top:10px}.topbar{padding:0 16px}.content{padding:16px}.cards{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}}
+@media(max-width:450px){.cards{grid-template-columns:1fr}}
+
+/* ===== POLIMENTO FINAL — ADMIN ===== */
+.cards{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.card{min-height:120px;display:flex;flex-direction:column;justify-content:center}
+.dashboard-alert{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-radius:12px;background:#fff7df;border:1px solid #f1d48a;color:#745000;margin-bottom:18px}
+.agenda-list{display:grid;gap:8px}
+.agenda-slot{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
+.agenda-slot .slot-time{font-weight:800;color:var(--navy)}
+.agenda-slot.occupied{background:#eef6ff;border-color:#c7d9f2}.agenda-slot.pending{background:#fff7e5;border-color:#f1d48a}
+.expense-status{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;padding:4px 0;border-radius:0;background:transparent!important}
+.expense-status .expense-square{width:18px;height:18px;min-width:18px;border-radius:4px;display:inline-block;border:1px solid rgba(0,0,0,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.expense-status.green{color:#08713f}.expense-status.green .expense-square{background:#22c55e}
+.expense-status.yellow{color:#9a5b00}.expense-status.yellow .expense-square{background:#facc15}
+.expense-status.red{color:#a31919}.expense-status.red .expense-square{background:#ef4444}
+.expense-status.blue{color:#24508d}.expense-status.blue .expense-square{background:#3b82f6}
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}.topbar{height:auto;min-height:72px;padding:14px 16px}}
+@media(max-width:560px){
+  body{overflow-x:hidden}
+  .sidebar{padding:16px 10px}
+  .side-logo{font-size:18px;padding:4px 8px 16px}
+  .sidebar > div.menu{display:grid;grid-template-columns:1fr;gap:3px;margin:0;padding-bottom:2px;overflow:visible}
+  .sidebar > div.menu button{width:100%;padding:11px 12px;margin:0;font-size:12px;white-space:normal;text-align:left}
+  .sidebar > button.logout{display:block;width:100%;margin:10px 0 0!important;position:static}
+  .topbar{gap:10px;align-items:flex-start}
+  .topbar h1{font-size:18px;line-height:1.25}
+  .admin-name{font-size:11px;text-align:right;white-space:nowrap}
+  .content{padding:10px}
+  .panel{padding:14px;border-radius:12px}
+  .panel-head{align-items:flex-start;flex-direction:column}
+  .panel-head .toolbar{width:100%}
+  .toolbar input,.toolbar select{min-width:0;flex:1 1 140px}
+  .cards{gap:10px!important;margin-bottom:14px}
+  .card{min-height:96px;padding:13px}
+  .card .value{font-size:21px}
+  #dashboard .cards{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  #dashboard .card{min-height:104px;padding:14px 12px}
+  #dashboard .card:first-child,#dashboard .card:nth-child(2),#dashboard .card:nth-child(3){grid-column:span 2}
+  #dashboard .card:nth-child(3){background:#eef4ff;border-color:#c7d9f2}
+  #dashboard .card:nth-child(3) .value{font-size:27px}
+  #dashboard .card .label{font-size:10px;line-height:1.35}
+  #dashboard .grid2{gap:10px}
+  #dashboard .panel h2{font-size:16px}
+  #dashboard .panel .muted{line-height:1.45}
+  #dashboard #nextReservations>div{padding:11px 0!important}
+  .dashboard-alert{align-items:flex-start;flex-direction:column;padding:12px}
+  .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:680px}
+  .calendar-head{gap:8px}
+  .calendar-head button{padding:8px 12px}
+  .week,.calendar{min-width:560px}
+  .panel:has(.calendar),.panel:has(.table-wrap){overflow:hidden}
+  .agenda-slot{grid-template-columns:64px 1fr;gap:8px;padding:9px}
+  .expense-total{font-size:20px}
+  .login-card{padding:24px;border-radius:16px}
+}
+
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <form class="login-card" onsubmit="login(event)">
+    <div class="logo">The Champions <span>Laporte</span></div>
+    <p>Painel administrativo</p>
+   <div class="field">
+  <label>E-mail</label>
+  <input id="user" type="email" autocomplete="username" required>
+</div>
+
+<div class="field">
+  <label>Senha</label>
+  <input id="pass" type="password" autocomplete="current-password" required>
+</div>
+    <button class="primary" style="width:100%">Entrar no painel</button>
+    <div id="loginError" class="login-error"></div>
+    <div style="margin-top:18px;text-align:center;color:#7b8799;font-size:13px">Acesso administrativo</div>
+  </form>
+</div>
+
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="side-logo">The Champions <span>Admin</span></div>
+    <div style="padding:0 10px 12px"><a href="index.html" style="color:#cbd2e6;text-decoration:none;font-size:12px"> Voltar ao site</a></div>
+    <div class="menu">
+      <button class="active" data-section="dashboard">📊 Dashboard</button>
+      <button data-section="reservas">📋 Reservas</button>
+      <button data-section="cadastros">👤 Cadastros</button>
+      <button data-section="agenda">📅 Agenda</button>
+      <button data-section="despesas">💰 Despesas</button>
+      <button data-section="quadras">⚽ Quadras e horários</button>
+      <button data-section="configuracoes">⚙️ Configurações</button>
+    </div>
+    <button class="menu logout" onclick="logout()">↩ Sair</button>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="admin-name">Administrador</div>
+    </header>
+
+    <div class="content">
+      <section id="dashboard" class="section active">
+        <div class="cards">
+          <div class="card"><div class="label">Receita confirmada</div><div id="receita" class="value green">R$ 0,00</div></div>
+          <div class="card"><div class="label">Despesas do mês</div><div id="despesasDashboard" class="value red">R$ 0,00</div></div>
+          <div class="card"><div class="label">Lucro líquido</div><div id="lucro" class="value gold">R$ 0,00</div></div>
+          <div class="card"><div class="label">Reservas confirmadas</div><div id="qtdConfirmadas" class="value">0</div></div>
+          <div class="card"><div class="label">Reservas pendentes</div><div id="qtdPendentes" class="value" style="color:#b86b00">0</div></div>
+        </div>
+        <div id="dashboardAlert" class="dashboard-alert hidden"></div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-head"><div><h2>Resumo financeiro</h2><span class="muted">Baseado nas reservas confirmadas e despesas cadastradas.</span></div></div>
+            <div id="financeInfo"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Próximas reservas</h2></div>
+            <div id="nextReservations"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reservas" class="section">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Reservas</h2><span class="muted">Acompanhe os dados enviados pelo cliente e confirme ou recuse.</span></div>
+            <div class="toolbar"><input id="searchReserva" placeholder="Buscar nome..." oninput="renderReservas()"><select id="filterStatus" onchange="renderReservas()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="confirmada">Confirmadas</option><option value="recusada">Recusadas</option></select></div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Cadastro</th><th>Cliente</th><th>Contato</th><th>Data</th><th>Horário</th><th>Duração</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody id="reservasBody"></tbody></table></div>
+        </div>
+      </section>
+
+
+      <section id="cadastros" class="section">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Cadastros</h2><span class="muted">Todos os clientes cadastrados no site, numerados pela ordem de cadastro.</span></div>
+            <div class="toolbar"><input id="searchCadastro" placeholder="Buscar nome, e-mail ou telefone..." oninput="renderCadastros()"></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nº</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>CPF</th><th>Data do cadastro</th><th>Ações</th></tr>
+              </thead>
+              <tbody id="cadastrosBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="agenda" class="section">
+        <div class="panel">
+          <div class="calendar-head">
+            <button onclick="changeMonth(-1)">←</button><div class="cal-title" id="calTitle"></div><button onclick="changeMonth(1)">→</button>
+          </div>
+          <div class="week"><div>DOM</div><div>SEG</div><div>TER</div><div>QUA</div><div>QUI</div><div>SEX</div><div>SÁB</div></div>
+          <div id="calendar" class="calendar"></div>
+          <p class="muted" style="margin-top:12px">Clique em um dia para ver os horários reservados.</p>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h2>Agenda do dia</h2><span class="muted">Cada reserva ocupa todo o intervalo da duração.</span></div></div><div id="dayDetails" class="empty">Selecione uma data no calendário.</div></div>
+      </section>
+
+      <section id="despesas" class="section">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Despesas</h2>
+        <span class="muted">Adicione, edite e exclua as despesas do estabelecimento.</span>
+      </div>
+      <div style="text-align:right">
+        <div class="expense-total" id="expenseTotal">R$ 0,00</div>
+        <div class="muted">Total do mês atual</div>
+      </div>
+    </div>
+
+    <form id="expenseForm" class="form-grid">
+      <div class="field">
+        <label>Descrição</label>
+        <input id="expenseDesc" type="text" placeholder="Ex.: Conta de energia" required>
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="expenseCat">
+          <option>Energia</option>
+          <option>Água</option>
+          <option>Manutenção</option>
+          <option>Funcionários</option>
+          <option>Materiais</option>
+          <option>Marketing</option>
+          <option>Aluguel</option>
+          <option>Impostos</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Valor (R$)</label>
+        <input id="expenseValue" type="number" min="0.01" step="0.01" placeholder="0,00" required>
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input id="expenseDate" type="date" required>
+      </div>
+      <div class="full" style="display:flex;gap:10px;align-items:center">
+        <button type="submit" class="primary" id="expenseSubmit">+ Adicionar despesa</button>
+        <button type="button" class="btn delete hidden" id="expenseCancel" onclick="cancelExpenseEdit()">Cancelar edição</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Lista de despesas</h2>
+        <span class="muted" id="expenseListInfo">Nenhuma despesa cadastrada.</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="expensesBody">
+          <tr><td colspan="5" class="empty">Nenhuma despesa cadastrada. Adicione uma acima.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+      <section id="quadras" class="section">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Quadras e horários</h2><span class="muted">Gerencie preços e bloqueios sem permitir interferência entre reservas.</span></div></div>
+          <div id="quadrasList" class="cards" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:20px;"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Bloquear horário</h2><span class="muted">O bloqueio será recusado automaticamente se houver conflito.</span></div></div>
+          <form id="blockForm" class="form-grid">
+            <div class="field"><label>Quadra</label><select id="blockQuadra" required></select></div>
+            <div class="field"><label>Data</label><input id="blockDate" type="date" required></div>
+            <div class="field"><label>Horário</label><input id="blockTime" type="time" required></div>
+            <div class="field"><label>Duração</label><select id="blockDuration"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></div>
+            <div class="field full"><label>Motivo</label><input id="blockReason" placeholder="Ex.: manutenção" required></div>
+            <div class="full"><button class="primary" type="submit">🔒 Bloquear horário</button></div>
+          </form>
+          <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Quadra</th><th>Data</th><th>Horário</th><th>Duração</th><th>Motivo</th><th>Ação</th></tr></thead><tbody id="blocksBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="configuracoes" class="section">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Configurações</h2><span class="muted">Essas informações controlam reservas, Pix e WhatsApp.</span></div></div>
+          <form id="settingsForm" class="form-grid">
+            <div class="field"><label>Nome do estabelecimento</label><input id="cfgNome" required></div>
+            <div class="field"><label>WhatsApp para comprovantes</label><input id="cfgWhatsapp" placeholder="5518999990000"></div>
+            <div class="field"><label>Chave Pix</label><input id="cfgPix" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"></div>
+            <div class="field"><label>Nome do recebedor</label><input id="cfgPixNome"></div>
+            <div class="field"><label>Horário de abertura</label><input id="cfgAbertura" type="time"></div>
+            <div class="field"><label>Horário de fechamento</label><input id="cfgFechamento" type="time"></div>
+            <div class="field"><label>Duração máxima</label><input id="cfgDurMax" type="number" min="1" max="12"></div>
+            <div class="field"><label>Antecedência máxima (dias)</label><input id="cfgAntecedencia" type="number" min="1" max="365"></div>
+            <div class="field full"><label>Endereço</label><input id="cfgEndereco"></div>
+            <div class="full"><button class="primary" type="submit">💾 Salvar configurações</button></div>
+          </form>
+          <div id="settingsMsg" style="margin-top:12px"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+let calDate = new Date();
+let selectedDay = null;
+const API_BASE = '/api';
+
+async function carregarReservasSupabase() {
+  const { data, error } = await supabaseClient
+    .from('reservas')
+    .select(`
+      *,
+      usuarios (
+        numero,
+        nome,
+        sobrenome,
+        telefone,
+        cpf
+      )
+    `)
+    .order('data', { ascending: true })
+    .order('hora_inicio', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []).map(r => ({
+    ...r,
+
+    cadastroNumero: r.usuarios?.numero || '-',
+
+    nome: [
+      r.usuarios?.nome || '',
+      r.usuarios?.sobrenome || ''
+    ].join(' ').trim() || 'Cliente',
+
+    telefone: r.usuarios?.telefone || '',
+
+    cpf: r.usuarios?.cpf || '',
+
+    horario: r.hora_inicio || ''
+  }));
+}
+
+async function excluirCadastroSupabase(numero) {
+  const { error } = await supabaseClient
+    .from('usuarios')
+    .delete()
+    .eq('numero', numero);
+  if (error) throw error;
+}
+
+async function carregarCadastrosSupabase() {
+  console.log("🔵 Buscando usuários no Supabase...");
+
+  const { data, error, count } = await supabaseClient
+    .from('usuarios')
+    .select('*', { count: 'exact' });
+
+  console.log("📦 DADOS:", data);
+  console.log("🔢 QUANTIDADE:", data ? data.length : 0);
+  console.log("🔢 COUNT:", count);
+  console.log("❌ ERRO:", error);
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+
+async function atualizarReservaSupabase(id, campos) {
+  const { data, error } = await supabaseClient
+    .from('reservas')
+    .update(campos)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) {
+    throw new Error('A reserva não pôde ser alterada. Verifique a permissão do administrador.');
+  }
+
+  return data;
+}
+
+async function excluirReservaSupabase(id) {
+  const { data, error } = await supabaseClient
+    .from('reservas')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) {
+    throw new Error('A reserva não pôde ser excluída. Verifique a permissão do administrador.');
+  }
+
+  return data;
+}
+
+// Banco local de emergência: permite usar o site mesmo sem /api.
+// Se um backend estiver disponível, ele continua sendo usado normalmente.
+async function localApi(resource, options={}, query={}) {
+  const method=(options.method||'GET').toUpperCase();
+  const read=(key, def=[])=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def));}catch(_){return def;}};
+  const write=(key,val)=>localStorage.setItem(key,JSON.stringify(val));
+  let body={}; try{body=options.body?JSON.parse(options.body):{};}catch(_){}
+  const keyMap={cadastros:'champions_cadastros',reservas:'champions_reservas',despesas:'champions_despesas',bloqueios:'champions_bloqueios',configuracoes:'champions_configuracoes',quadras:'champions_quadras'};
+  if(resource==='site_info') return {ok:true,data:{nome:'Champions Arena',telefone:'',endereco:'',instagram:''}};
+  if(resource==='quadras'){
+    let a=read(keyMap.quadras,[
+      {id:1,nome:'Quadra 1',ativa:1,valor_hora:270},
+      {id:2,nome:'Quadra 2',ativa:1,valor_hora:270}
+    ]);
+    if(method==='GET') return {ok:true,data:a};
+  }
+  if(resource==='disponibilidade'){
+    const rs=read(keyMap.reservas,[]), bs=read(keyMap.bloqueios,[]);
+    const data=query.data, q=String(query.quadra_id||'');
+    const taken=[...rs.filter(x=>String(x.data)===String(data)&&(!q||String(x.quadra_id)===q)),...bs.filter(x=>String(x.data)===String(data)&&(!q||String(x.quadra_id)===q))];
+    return {ok:true,data:taken};
+  }
+  if(resource==='pix') return {ok:true,data:{id:'pix-local',status:'pending',qr_code:''}};
+  if(resource==='pix_status') return {ok:true,data:{status:'pending'}};
+  if(resource==='login'){
+    const cs=read(keyMap.cadastros,[]), u=cs.find(x=>String(x.email||'').toLowerCase()===String(body.email||'').toLowerCase());
+    if(!u || String(u.senha)!==String(body.senha)) throw new Error('E-mail ou senha inválidos.');
+    sessionStorage.setItem('champions_user',JSON.stringify(u)); return {ok:true,data:u};
+  }
+  if(resource==='me'){let u=readSession('champions_user'); if(!u) throw new Error('Não autenticado.'); return {ok:true,data:u};}
+  if(resource==='logout'){sessionStorage.removeItem('champions_user');return {ok:true,data:{}};}
+  if(resource==='admin_logout') return {ok:true,data:{}};
+  if(resource==='dashboard'){
+    const rs=read(keyMap.reservas,[]), ds=read(keyMap.despesas,[]);
+    return {ok:true,data:{reservas:rs.length,receita:rs.filter(x=>String(x.status).toLowerCase()!=='recusada').reduce((a,x)=>a+Number(x.valor||0),0),despesas:ds.reduce((a,x)=>a+Number(x.valor||0),0)}};
+  }
+  if(resource==='cadastros' && method==='POST'){
+    const a=read(keyMap.cadastros,[]); const email=String(body.email||'').trim().toLowerCase();
+    if(!email || !body.senha) throw new Error('Preencha e-mail e senha.');
+    if(a.some(x=>String(x.email||'').toLowerCase()===email)) throw new Error('Este e-mail já está cadastrado.');
+    const u={...body,id:Date.now(),numero:a.length+1}; a.push(u); write(keyMap.cadastros,a); return {ok:true,data:u};
+  }
+  if(resource==='cadastros'){
+    let a=read(keyMap.cadastros,[]);
+    if(method==='DELETE'){a=a.filter(x=>String(x.numero)!==String(query.numero));write(keyMap.cadastros,a);return {ok:true,data:{}}}
+    return {ok:true,data:a};
+  }
+  if(resource==='reservas'){
+    let a=read(keyMap.reservas,[]);
+    if(method==='POST'){const x={...body,id:body.id||('r'+Date.now()),criadoEm:new Date().toISOString(),status:body.status||'pendente'};a.push(x);write(keyMap.reservas,a);broadcastUpdate();return {ok:true,data:x};}
+    if(method==='PATCH'){let x=a.find(x=>String(x.id)===String(body.id));if(x){Object.assign(x,body);write(keyMap.reservas,a);broadcastUpdate();}return {ok:true,data:x||{}}}
+    if(method==='DELETE'){a=a.filter(x=>String(x.id)!==String(query.id));write(keyMap.reservas,a);broadcastUpdate();return {ok:true,data:{}}}
+    let q=query; if(q.quadra_id) a=a.filter(x=>String(x.quadra_id)===String(q.quadra_id)); if(q.data) a=a.filter(x=>String(x.data)===String(q.data)); return {ok:true,data:a};
+  }
+  if(resource==='despesas'){
+    let a=read(keyMap.despesas,[]);
+    if(method==='POST'||method==='PUT'){let x={...body,id:body.id||('d'+Date.now())}; if(method==='PUT'){const i=a.findIndex(y=>String(y.id)===String(body.id));if(i>=0)a[i]=x;else a.push(x)}else a.push(x);write(keyMap.despesas,a);return {ok:true,data:x};}
+    if(method==='DELETE'){a=a.filter(x=>String(x.id)!==String(query.id));write(keyMap.despesas,a);return {ok:true,data:{}}} return {ok:true,data:a};
+  }
+  if(resource==='bloqueios'){
+    let a=read(keyMap.bloqueios,[]);
+    if(method==='POST'){const x={...body,id:'b'+Date.now()};a.push(x);write(keyMap.bloqueios,a);return {ok:true,data:x};}
+    if(method==='DELETE'){a=a.filter(x=>String(x.id)!==String(query.id));write(keyMap.bloqueios,a);return {ok:true,data:{}}} return {ok:true,data:a};
+  }
+  if(resource==='configuracoes'){
+    let a=read(keyMap.configuracoes,[]);
+    if(method==='POST'){for(const [k,v] of Object.entries(body)){const i=a.findIndex(x=>x.chave===k);if(i>=0)a[i].valor=v;else a.push({chave:k,valor:v})}write(keyMap.configuracoes,a);return {ok:true,data:a};}
+    return {ok:true,data:a};
+  }
+  return {ok:true,data:[]};
+}
+function readSession(k){try{return JSON.parse(sessionStorage.getItem(k)||'null')}catch(_){return null}}
+function broadcastUpdate(){try{new BroadcastChannel('champions_reservas').postMessage({type:'updated'})}catch(_){}}
+
+async function apiFetch(resource, options={}) {
+  const [resourceName, resourceQuery] = String(resource).split('?');
+  const q={}; if(resourceQuery){new URLSearchParams(resourceQuery).forEach((v,k)=>q[k]=v);}
+  try{
+    const res=await fetch(API_BASE+'?resource='+encodeURIComponent(resourceName)+(resourceQuery?'&'+resourceQuery:''),{headers:{'Content-Type':'application/json'},...options});
+    let data={};try{data=await res.json();}catch(_){}
+    if(!res.ok||data.ok===false)throw new Error(data.message||'Erro no servidor.');
+    return data;
+  }catch(e){return await localApi(resourceName,options,q);}
+}
+async function syncFromServer() {
+
+  try {
+
+    // ==============================
+    // CADASTROS
+    // ==============================
+    const cadastros = await carregarCadastrosSupabase();
+
+    localStorage.setItem(
+      'champions_cadastros',
+      JSON.stringify(cadastros || [])
+    );
+
+
+    // ==============================
+    // RESERVAS
+    // ==============================
+    const reservas = await carregarReservasSupabase();
+
+    localStorage.setItem(
+      'champions_reservas',
+      JSON.stringify(reservas || [])
+    );
+
+
+    // ==============================
+    // DESPESAS
+    // ==============================
+    try {
+
+      const despesas = await apiFetch('despesas');
+
+      localStorage.setItem(
+        'champions_despesas',
+        JSON.stringify(despesas.data || [])
+      );
+
+    } catch (erroDespesas) {
+
+      console.warn(
+        'Não foi possível sincronizar despesas:',
+        erroDespesas
+      );
+
+      // Mantém as despesas que já estavam salvas
+    }
+
+
+    // ==============================
+    // ATUALIZA A TELA
+    // ==============================
+    refreshAll();
+
+    console.log('Dashboard sincronizado com o Supabase.');
+
+  } catch (err) {
+
+    console.error(
+      'Erro ao sincronizar dados do Supabase:',
+      err
+    );
+
+    // Se o Supabase falhar, mantém o
+    // que já existe no localStorage.
+
+    refreshAll();
+  }
+}
+
+function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+
+function getCadastros(){return JSON.parse(localStorage.getItem('champions_cadastros')||'[]');}
+function saveCadastros(v){localStorage.setItem('champions_cadastros',JSON.stringify(v));}
+function renderCadastros(){
+  const q=(document.getElementById('searchCadastro')?.value||'').toLowerCase();
+  const arr=getCadastros().filter(c =>
+    !q ||
+    String(c.numero).includes(q) ||
+    String(c.nome||'').toLowerCase().includes(q) ||
+    String(c.email||'').toLowerCase().includes(q) ||
+    String(c.telefone||'').toLowerCase().includes(q)
+  ).sort((a,b)=>Number(a.numero)-Number(b.numero));
+
+  const body=document.getElementById('cadastrosBody');
+  if(!body)return;
+  body.innerHTML=arr.length ? arr.map(c=>`
+    <tr>
+      <td><strong>#${esc(c.numero)}</strong></td>
+      <td><strong>${esc(c.nome)}</strong></td>
+      <td>${esc(c.email||'-')}</td>
+      <td>${esc(c.telefone||'-')}</td>
+      <td>${esc(c.cpf||'-')}</td>
+      <td>${new Date(c.criadoEm).toLocaleString('pt-BR')}</td>
+      <td><button class="btn delete" onclick="deleteCadastro(${Number(c.numero)})">Excluir</button></td>
+    </tr>`).join('') :
+    '<tr><td colspan="7" class="empty">Nenhum cadastro encontrado.</td></tr>';
+}
+async function deleteCadastro(numero){
+  if(!confirm('Excluir este cadastro? As reservas vinculadas permanecerão registradas.'))return;
+  try{await excluirCadastroSupabase(numero); saveCadastros(getCadastros().filter(c=>Number(c.numero)!==Number(numero))); renderCadastros();}
+  catch(err){alert(err.message||'Não foi possível excluir o cadastro.');}
+}
+
+function getReservations(){return JSON.parse(localStorage.getItem('champions_reservas')||'[]');}
+function saveReservations(v){localStorage.setItem('champions_reservas',JSON.stringify(v));}
+function getExpenses(){return JSON.parse(localStorage.getItem('champions_despesas')||'[]');}
+function saveExpenses(v){localStorage.setItem('champions_despesas',JSON.stringify(v));}
+
+async function login(e){
+  e.preventDefault();
+
+  const email = document.getElementById('user').value.trim();
+  const senha = document.getElementById('pass').value;
+  const erro = document.getElementById('loginError');
+
+  erro.textContent = '';
+
+  try {
+    // 1. Faz login pelo Supabase Auth
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: senha
+    });
+
+    if (error) {
+      throw new Error('E-mail ou senha inválidos.');
+    }
+
+    const usuario = data.user;
+
+    // 2. Verifica se o usuário é administrador
+    const { data: admin, error: adminError } = await supabaseClient
+      .from('administradores')
+      .select('id, nome, nivel, ativo')
+      .eq('id', usuario.id)
+      .eq('ativo', true)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error('Erro ao verificar administrador:', adminError);
+      throw new Error('Não foi possível verificar o acesso administrativo.');
+    }
+
+    // 3. Se não estiver na tabela de administradores, bloqueia
+    if (!admin) {
+      await supabaseClient.auth.signOut();
+      throw new Error('Este usuário não possui acesso administrativo.');
+    }
+
+    // 4. Verifica o nível
+    if (admin.nivel !== 'administrador') {
+      await supabaseClient.auth.signOut();
+      throw new Error('Seu usuário não possui nível de administrador.');
+    }
+
+    // 5. Guarda apenas uma indicação local de que o painel foi aberto
+    sessionStorage.setItem('champions_admin', '1');
+
+    // Guarda o nome para mostrar no painel
+    sessionStorage.setItem(
+      'champions_admin_nome',
+      admin.nome || usuario.email
+    );
+
+    openApp();
+
+  } catch (err) {
+    console.error(err);
+    erro.textContent = err.message || 'Não foi possível entrar.';
+  }
+}
+async function openApp(){
+
+  const nomeAdmin = sessionStorage.getItem('champions_admin_nome');
+
+  const adminName = document.getElementById('adminName');
+
+  if(adminName && nomeAdmin){
+    adminName.textContent = nomeAdmin;
+  }
+
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+
+  const date=document.getElementById('expenseDate');
+  if(date) date.value=new Date().toISOString().slice(0,10);
+
+  refreshAll();
+  await syncFromServer();
+  await inicializarAdminExtras();
+
+  clearInterval(window.championsDbPoll);
+
+  window.championsDbPoll=setInterval(async()=>{
+    await syncFromServer();
+    await carregarQuadrasAdmin();
+    await carregarBloqueios();
+  },10000);
+}
+async function logout(){
+  try {
+    await supabaseClient.auth.signOut();
+  } catch (e) {
+    console.warn('Erro ao sair:', e);
+  }
+
+  sessionStorage.removeItem('champions_admin');
+  sessionStorage.removeItem('champions_admin_nome');
+
+  location.reload();
+}
+
+document.querySelectorAll('.menu button[data-section]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    const target=document.querySelector('section.section[id="'+btn.dataset.section+'"]');
+    if(target) target.classList.add('active');
+
+    document.getElementById('pageTitle').textContent={
+      dashboard:'Dashboard',
+      reservas:'Reservas',
+      cadastros:'Cadastros',
+      agenda:'Agenda',
+      despesas:'Despesas',
+      quadras:'Quadras e horários',
+      configuracoes:'Configurações'
+    }[btn.dataset.section] || 'Administração';
+
+    refreshAll();
+  });
+});
+
+function mostrarAvisoAdmin(mensagem, tipo = 'info') {
+  let aviso = document.getElementById('adminActionNotice');
+
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'adminActionNotice';
+    aviso.style.cssText = `
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 99999;
+      max-width: 420px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      box-shadow: 0 12px 35px rgba(0,0,0,.18);
+      display: none;
+    `;
+    document.body.appendChild(aviso);
+  }
+
+  aviso.textContent = mensagem;
+  aviso.style.background = tipo === 'erro' ? '#fde2e2' : '#ddf6e9';
+  aviso.style.color = tipo === 'erro' ? '#a31919' : '#08713f';
+  aviso.style.display = 'block';
+
+  clearTimeout(window.adminActionNoticeTimer);
+  window.adminActionNoticeTimer = setTimeout(() => {
+    aviso.style.display = 'none';
+  }, 3500);
+}
+
+async function confirmReservation(id, botao = null) {
+  const rs = getReservations();
+  const r = rs.find(x => String(x.id) === String(id));
+
+  if (!r) {
+    mostrarAvisoAdmin('Reserva não encontrada.', 'erro');
+    return;
+  }
+
+  const textoOriginal = botao?.textContent;
+
+  try {
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent = 'Confirmando...';
+    }
+
+    console.log('Confirmando reserva:', id);
+
+    const atualizada = await atualizarReservaSupabase(id, {
+      status: 'confirmada'
+    });
+
+    console.log('Reserva confirmada no Supabase:', atualizada);
+
+    r.status = 'confirmada';
+    saveReservations(rs);
+    refreshAll();
+
+    mostrarAvisoAdmin('Pagamento confirmado com sucesso.');
+
+    // Sincroniza novamente sem desfazer a ação caso outra parte do painel falhe.
+    syncFromServer().catch(err => console.warn('Falha ao ressincronizar após confirmação:', err));
+
+  } catch (err) {
+    console.error('Erro ao confirmar pagamento:', err);
+    mostrarAvisoAdmin(
+      'Não foi possível confirmar: ' + (err?.message || 'erro desconhecido.'),
+      'erro'
+    );
+  } finally {
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = textoOriginal || '✓ Confirmar pagamento';
+    }
+  }
+}
+
+async function rejectReservation(id, botao = null) {
+  const rs = getReservations();
+  const r = rs.find(x => String(x.id) === String(id));
+
+  if (!r) {
+    mostrarAvisoAdmin('Reserva não encontrada.', 'erro');
+    return;
+  }
+
+  const textoOriginal = botao?.textContent;
+
+  try {
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent = 'Recusando...';
+    }
+
+    console.log('Recusando reserva:', id);
+
+    const atualizada = await atualizarReservaSupabase(id, {
+      status: 'recusada'
+    });
+
+    console.log('Reserva recusada no Supabase:', atualizada);
+
+    r.status = 'recusada';
+    saveReservations(rs);
+    refreshAll();
+
+    mostrarAvisoAdmin('Reserva recusada com sucesso.');
+
+    // Sincroniza novamente sem transformar uma recusa já salva em erro visual.
+    syncFromServer().catch(err => console.warn('Falha ao ressincronizar após recusa:', err));
+
+  } catch (err) {
+    console.error('Erro ao recusar pagamento:', err);
+    mostrarAvisoAdmin(
+      'Não foi possível recusar: ' + (err?.message || 'erro desconhecido.'),
+      'erro'
+    );
+  } finally {
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = textoOriginal || '✕ Recusar pagamento';
+    }
+  }
+}
+
+async function deleteReservation(id, botao = null){
+  const rs = getReservations();
+  const r = rs.find(x => String(x.id) === String(id));
+
+  if (!r) {
+    mostrarAvisoAdmin('Reserva não encontrada.', 'erro');
+    return;
+  }
+
+  const textoOriginal = botao?.textContent || 'Excluir';
+
+  try {
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent = 'Excluindo...';
+    }
+
+    console.log('Excluindo reserva:', id);
+
+    await excluirReservaSupabase(id);
+
+    const atualizadas = rs.filter(x => String(x.id) !== String(id));
+    saveReservations(atualizadas);
+    refreshAll();
+
+    mostrarAvisoAdmin('Reserva excluída com sucesso.');
+
+    syncFromServer().catch(err => console.warn('Falha ao ressincronizar após exclusão:', err));
+
+  } catch (err) {
+    console.error('Erro ao excluir reserva:', err);
+    mostrarAvisoAdmin(
+      'Não foi possível excluir: ' + (err?.message || 'erro desconhecido.'),
+      'erro'
+    );
+  } finally {
+    if (botao && document.body.contains(botao)) {
+      botao.disabled = false;
+      botao.textContent = textoOriginal;
+    }
+  }
+}
+
+function renderReservas() {
+  const campoBusca = document.getElementById('searchReserva');
+  const filtroStatus = document.getElementById('filterStatus');
+
+  const q = (campoBusca?.value || '').toLowerCase();
+  const f = filtroStatus?.value || '';
+
+  const rs = getReservations()
+    .filter(r => {
+      const nome = String(r.nome || '').toLowerCase();
+      const telefone = String(r.telefone || '').toLowerCase();
+
+      const correspondeBusca =
+        !q ||
+        nome.includes(q) ||
+        telefone.includes(q);
+
+      const correspondeStatus =
+        !f || r.status === f;
+
+      return correspondeBusca && correspondeStatus;
+    })
+    .sort((a, b) => {
+      return (
+        String(a.data || '') +
+        String(a.hora_inicio || a.horario || '')
+      ).localeCompare(
+        String(b.data || '') +
+        String(b.hora_inicio || b.horario || '')
+      );
+    });
+
+  const body = document.getElementById('reservasBody');
+
+  if (!body) return;
+
+  if (!rs.length) {
+    body.innerHTML =
+      '<tr><td colspan="9" class="empty">Nenhuma reserva encontrada.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = rs.map(r => {
+
+    const horarioInicio =
+      r.hora_inicio ||
+      r.horario ||
+      '-';
+
+    const horarioFim =
+      r.hora_fim ||
+      '';
+
+    const horario =
+      horarioFim
+        ? `${horarioInicio} - ${horarioFim}`
+        : horarioInicio;
+
+    return `
+      <tr>
+
+        <td>
+          <strong>#${esc(r.cadastroNumero || '-')}</strong>
+        </td>
+
+        <td>
+          <strong>${esc(r.nome || 'Cliente')}</strong>
+          <br>
+          <span class="muted">${esc(r.id || '')}</span>
+        </td>
+
+        <td>
+          ${esc(r.telefone || '-')}
+        </td>
+
+        <td>
+          ${fmtDate(r.data)}
+        </td>
+
+        <td>
+          ${esc(horario)}
+        </td>
+
+        <td>
+          ${Number(r.duracao || 0)}h
+        </td>
+
+        <td>
+  <strong style="color:var(--green);font-size:14px">
+    ${money(r.valor)}
+  </strong>
+</td>
+
+        <td>
+          <span class="badge ${esc(r.status || '')}">
+            ${labelStatus(r.status)}
+          </span>
+        </td>
+
+        <td>
+          <div class="actions">
+
+            ${
+              r.status === 'pendente'
+              ?
+              `
+              <button
+  type="button"
+  class="btn ok"
+  data-action="confirmar-reserva"
+  data-id="${esc(r.id)}">
+  ✓ Confirmar pagamento
+</button>
+
+<button
+  type="button"
+  class="btn no"
+  data-action="recusar-reserva"
+  data-id="${esc(r.id)}">
+  ✕ Recusar pagamento
+</button>
+              `
+              :
+              ''
+            }
+
+            <button
+              type="button"
+              class="btn delete"
+              data-action="excluir-reserva"
+              data-id="${esc(r.id)}">
+              Excluir
+            </button>
+
+          </div>
+        </td>
+
+      </tr>
+    `;
+  }).join('');
+}
+// Os botões de confirmar/recusar usam delegação de eventos.
+// Isso também funciona em prévias que bloqueiam onclick inline.
+document.addEventListener('click', async (event) => {
+  const botao = event.target.closest('button[data-action]');
+  if (!botao) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const acao = botao.dataset.action;
+  const id = botao.dataset.id;
+
+  console.log('Clique em ação de reserva:', acao, id);
+
+  if (!id) {
+    mostrarAvisoAdmin('ID da reserva não encontrado.', 'erro');
+    return;
+  }
+
+  if (acao === 'confirmar-reserva') {
+    await confirmReservation(id, botao);
+    return;
+  }
+
+  // Ações destrutivas usam confirmação pelo próprio botão,
+  // evitando confirm()/alert(), que podem ser bloqueados em prévias.
+  if (acao === 'recusar-reserva' || acao === 'excluir-reserva') {
+    if (botao.dataset.confirmado !== '1') {
+      botao.dataset.confirmado = '1';
+      botao.dataset.textoOriginal = botao.textContent;
+
+      botao.textContent =
+        acao === 'recusar-reserva'
+          ? 'Clique novamente para recusar'
+          : 'Clique novamente para excluir';
+
+      clearTimeout(botao._confirmTimer);
+      botao._confirmTimer = setTimeout(() => {
+        if (!document.body.contains(botao)) return;
+        botao.dataset.confirmado = '0';
+        botao.textContent =
+          botao.dataset.textoOriginal ||
+          (acao === 'recusar-reserva' ? '✕ Recusar pagamento' : 'Excluir');
+      }, 4000);
+
+      return;
+    }
+
+    clearTimeout(botao._confirmTimer);
+    botao.dataset.confirmado = '0';
+
+    if (acao === 'recusar-reserva') {
+      await rejectReservation(id, botao);
+      return;
+    }
+
+    if (acao === 'excluir-reserva') {
+      await deleteReservation(id, botao);
+      return;
+    }
+  }
+});
+
+window.confirmReservation = confirmReservation;
+window.rejectReservation = rejectReservation;
+window.deleteReservation = deleteReservation;
+
+function labelStatus(s){return {pendente:'Pendente',aguardando_comprovante:'Aguardando comprovante',confirmada:'Confirmada',recusada:'Recusada',cancelada:'Cancelada',concluida:'Concluída',no_show:'No-show'}[s]||s;}
+function fmtDate(s){if(!s)return '-';return new Date(s+'T00:00:00').toLocaleDateString('pt-BR');}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+
+function renderCalendar() {
+  const y = calDate.getFullYear();
+  const m = calDate.getMonth();
+
+  document.getElementById('calTitle').textContent =
+    calDate.toLocaleDateString('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    });
+
+  const first =
+    new Date(y, m, 1).getDay();
+
+  const days =
+    new Date(y, m + 1, 0).getDate();
+
+  const prev =
+    new Date(y, m, 0).getDate();
+
+  const rs = getReservations()
+    .filter(r => r.status !== 'recusada');
+
+  let cells = [];
+
+  for (let i = 0; i < first; i++) {
+    cells.push({
+      day: prev - first + i + 1,
+      muted: true,
+      date: new Date(
+        y,
+        m - 1,
+        prev - first + i + 1
+      )
+    });
+  }
+
+  for (let d = 1; d <= days; d++) {
+    cells.push({
+      day: d,
+      muted: false,
+      date: new Date(y, m, d)
+    });
+  }
+
+  while (cells.length < 42) {
+    const n =
+      cells.length - first - days + 1;
+
+    cells.push({
+      day: n,
+      muted: true,
+      date: new Date(y, m + 1, n)
+    });
+  }
+
+  document.getElementById('calendar').innerHTML =
+    cells.map(c => {
+
+      const iso =
+        c.date.toISOString().slice(0, 10);
+
+      const dayRs =
+        rs.filter(r => r.data === iso);
+
+      return `
+        <div
+          class="day ${c.muted ? 'muted-day' : ''}"
+          onclick="selectDay('${iso}')">
+
+          <div class="day-num">
+            ${c.day}
+          </div>
+
+          ${
+            dayRs.slice(0, 4).map(r => `
+              <div class="event ${esc(r.status || '')}">
+                ${esc(r.hora_inicio || '-')}
+                ·
+                ${esc(r.nome || 'Cliente')}
+              </div>
+            `).join('')
+          }
+
+          ${
+            dayRs.length > 4
+            ? `<div class="muted">
+                +${dayRs.length - 4}
+              </div>`
+            : ''
+          }
+
+        </div>
+      `;
+
+    }).join('');
+}
+function changeMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar();}
+function selectDay(iso) {
+
+  selectedDay = iso;
+
+  const rs = getReservations()
+    .filter(r =>
+      r.data === iso &&
+      r.status !== 'recusada'
+    )
+    .sort((a, b) =>
+      String(a.hora_inicio || '')
+        .localeCompare(
+          String(b.hora_inicio || '')
+        )
+    );
+
+  if (!rs.length) {
+    document.getElementById('dayDetails').innerHTML =
+      '<div class="empty">Nenhuma reserva para este dia.</div>';
+
+    return;
+  }
+
+  document.getElementById('dayDetails').innerHTML =
+    '<div class="agenda-list">' +
+
+    rs.map(r => {
+
+      const inicio =
+        r.hora_inicio || '-';
+
+      const fim =
+        r.hora_fim || '-';
+
+      return `
+        <div class="agenda-slot ${
+          r.status === 'pendente'
+            ? 'pending'
+            : 'occupied'
+        }">
+
+          <div class="slot-time">
+            ${esc(inicio)}
+
+            <br>
+
+            <span class="muted">
+              até ${esc(fim)}
+            </span>
+          </div>
+
+          <div>
+
+            <strong>
+              ${esc(r.nome || 'Cliente')}
+            </strong>
+
+            <br>
+
+            <span class="muted">
+              ${Number(r.duracao || 0)}h
+              ·
+              ${money(r.valor)}
+              ·
+              ${labelStatus(r.status)}
+            </span>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join('') +
+
+    '</div>';
+}
+
+
+let editingExpenseId = null;
+
+function currentMonthExpenses(){
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  return getExpenses().filter(x => String(x.data || '').slice(0,7) === ym);
+}
+
+function setupExpenseForm(){
+  const form=document.getElementById('expenseForm');
+  if(!form || form.dataset.ready==='1') return;
+  form.dataset.ready='1';
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    await saveExpenseFromForm();
+  });
+  const date=document.getElementById('expenseDate');
+  if(date && !date.value) date.value=new Date().toISOString().slice(0,10);
+}
+
+async function saveExpenseFromForm(){
+  const desc=document.getElementById('expenseDesc').value.trim();
+  const categoria=document.getElementById('expenseCat').value;
+  const valor=Number(document.getElementById('expenseValue').value);
+  const data=document.getElementById('expenseDate').value;
+
+  if(!desc || !data || !Number.isFinite(valor) || valor<=0){
+    alert('Preencha descrição, valor e data corretamente.');
+    return;
+  }
+
+  const arr=getExpenses();
+
+  if(editingExpenseId){
+    const item=arr.find(x=>x.id===editingExpenseId);
+    if(item){
+      item.descricao=desc;
+      item.categoria=categoria;
+      item.valor=valor;
+      item.data=data;
+    }
+  }else{
+    arr.push({
+      id:'EXP-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      descricao:desc,
+      categoria,
+      valor,
+      data
+    });
+  }
+
+  try {
+    if(editingExpenseId){ await apiFetch('despesas',{method:'PUT',body:JSON.stringify({id:editingExpenseId,descricao, categoria, valor, data})}); }
+    else { await apiFetch('despesas',{method:'POST',body:JSON.stringify({descricao,categoria,valor,data})}); }
+  } catch(err) { alert(err.message||'Não foi possível salvar a despesa no banco.'); return; }
+  const fresh=await apiFetch('despesas'); saveExpenses(fresh.data||[]);
+  cancelExpenseEdit();
+  renderExpenses();
+  refreshDashboard();
+}
+
+function editExpense(id){
+  const item=getExpenses().find(x=>x.id===id);
+  if(!item) return;
+
+  editingExpenseId=id;
+  document.getElementById('expenseDesc').value=item.descricao;
+  document.getElementById('expenseCat').value=item.categoria;
+  document.getElementById('expenseValue').value=item.valor;
+  document.getElementById('expenseDate').value=item.data;
+
+  document.getElementById('expenseSubmit').textContent='✓ Salvar alteração';
+  document.getElementById('expenseCancel').classList.remove('hidden');
+  document.getElementById('expenseDesc').focus();
+}
+
+function cancelExpenseEdit(){
+  editingExpenseId=null;
+  const form=document.getElementById('expenseForm');
+  if(form) form.reset();
+
+  const date=document.getElementById('expenseDate');
+  if(date) date.value = new Date().toISOString().slice(0,10);
+
+  const submit=document.getElementById('expenseSubmit');
+  if(submit) submit.textContent='+ Adicionar despesa';
+
+  const cancel=document.getElementById('expenseCancel');
+  if(cancel) cancel.classList.add('hidden');
+}
+
+async function deleteExpense(id){
+  if(!confirm('Tem certeza que deseja excluir esta despesa?')) return;
+  try{await apiFetch('despesas?id='+encodeURIComponent(id),{method:'DELETE'});}catch(err){alert(err.message||'Não foi possível excluir a despesa.');return;}
+  saveExpenses(getExpenses().filter(x=>x.id!==id));
+  if(editingExpenseId===id) cancelExpenseEdit();
+  renderExpenses();
+  refreshDashboard();
+}
+
+function expenseStatus(date){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(String(date)+'T00:00:00'); d.setHours(0,0,0,0);
+  const diff=Math.round((d-today)/86400000);
+  if(diff<0)return '<span class="expense-status red"><span class="expense-square"></span>Em atraso</span>';
+  if(diff===0)return '<span class="expense-status yellow"><span class="expense-square"></span>Vence hoje</span>';
+  return '<span class="expense-status green"><span class="expense-square"></span>A vencer</span>';
+}
+
+function renderExpenses(){
+  setupExpenseForm();
+
+  const arr=getExpenses().sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  const monthTotal=currentMonthExpenses().reduce((sum,x)=>sum+Number(x.valor||0),0);
+
+  const total=document.getElementById('expenseTotal');
+  if(total) total.textContent=money(monthTotal);
+
+  const info=document.getElementById('expenseListInfo');
+  if(info) info.textContent=arr.length
+    ? arr.length+' despesa(s) cadastrada(s).'
+    : 'Nenhuma despesa cadastrada.';
+
+  const body=document.getElementById('expensesBody');
+  if(!body) return;
+
+  if(!arr.length){
+    body.innerHTML='<tr><td colspan="6" class="empty">Nenhuma despesa cadastrada. Adicione uma acima.</td></tr>';
+    return;
+  }
+
+  body.innerHTML=arr.map(x=>`
+    <tr>
+      <td>${fmtDate(x.data)}</td>
+      <td><strong>${esc(x.descricao)}</strong></td>
+      <td>${esc(x.categoria)}</td>
+      <td><strong>${money(x.valor)}</strong></td>
+      <td>${expenseStatus(x.data)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn edit" type="button" onclick="editExpense('${x.id}')">✏ Editar</button>
+          <button class="btn delete" type="button" onclick="deleteExpense('${x.id}')">🗑 Excluir</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+let adminQuadras=[];
+async function carregarQuadrasAdmin(){
+  try{
+    const r=await apiFetch('quadras'); adminQuadras=r.data||[];
+    const list=document.getElementById('quadrasList'), sel=document.getElementById('blockQuadra');
+    if(list) list.innerHTML=adminQuadras.map(q=>`<div class="card"><div class="label">${esc(q.nome)}</div><div class="value">${money(q.valor_hora)}/h</div><div class="muted">${esc(q.descricao||'')} · ${Number(q.ativa)?'Ativa':'Inativa'}</div></div>`).join('');
+    if(sel) sel.innerHTML=adminQuadras.map(q=>`<option value="${q.id}">${esc(q.nome)}</option>`).join('');
+  }catch(e){console.warn('Quadras:',e);}
+}
+async function carregarBloqueios(){
+  try{
+    const r=await apiFetch('bloqueios'); const body=document.getElementById('blocksBody'); if(!body)return;
+    const rows=r.data||[]; body.innerHTML=rows.length?rows.map(b=>`<tr><td>${esc(b.quadra_nome)}</td><td>${fmtDate(b.data)}</td><td>${esc(b.horario)}</td><td>${b.duracao}h</td><td>${esc(b.motivo)}</td><td><button class="btn delete" onclick="removerBloqueio('${esc(b.id)}')">Desbloquear</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum bloqueio ativo.</td></tr>';
+  }catch(e){console.warn('Bloqueios:',e);}
+}
+async function removerBloqueio(id){
+  if(!confirm('Desbloquear este período?')) return;
+  try{await apiFetch('bloqueios?id='+encodeURIComponent(id),{method:'DELETE'}); await carregarBloqueios();}catch(e){alert(e.message||'Não foi possível desbloquear.');}
+}
+async function carregarConfiguracoesAdmin(){
+  try{
+    const r=await apiFetch('configuracoes'); const map=Object.fromEntries((r.data||[]).map(x=>[x.chave,x.valor]));
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
+    set('cfgNome',map.nome_estabelecimento);set('cfgWhatsapp',map.whatsapp);set('cfgPix',map.pix_chave);set('cfgPixNome',map.pix_beneficiario);set('cfgAbertura',map.horario_abertura||'07:00');set('cfgFechamento',map.horario_fechamento||'23:00');set('cfgDurMax',Math.min(Number(map.duracao_maxima_reserva||3)||3,3));set('cfgAntecedencia',map.antecedencia_maxima_dias||'90');set('cfgEndereco',map.endereco);
+  }catch(e){console.warn('Configurações:',e);}
+}
+async function salvarConfiguracoes(e){
+  e.preventDefault();
+  const payload={nome_estabelecimento:document.getElementById('cfgNome').value.trim(),whatsapp:document.getElementById('cfgWhatsapp').value.trim(),pix_chave:document.getElementById('cfgPix').value.trim(),pix_beneficiario:document.getElementById('cfgPixNome').value.trim(),horario_abertura:document.getElementById('cfgAbertura').value,horario_fechamento:document.getElementById('cfgFechamento').value,duracao_maxima_reserva:document.getElementById('cfgDurMax').value,antecedencia_maxima_dias:document.getElementById('cfgAntecedencia').value,endereco:document.getElementById('cfgEndereco').value.trim()};
+  try{await apiFetch('configuracoes',{method:'POST',body:JSON.stringify(payload)});document.getElementById('settingsMsg').innerHTML='<span class="badge confirmada">Configurações salvas.</span>';}catch(e){document.getElementById('settingsMsg').innerHTML='<span class="badge recusada">'+esc(e.message||'Erro ao salvar')+'</span>';}
+}
+async function inicializarAdminExtras(){
+  const form=document.getElementById('blockForm'); if(form&&!form.dataset.ready){form.dataset.ready='1';form.addEventListener('submit',async e=>{e.preventDefault();try{await apiFetch('bloqueios',{method:'POST',body:JSON.stringify({quadra_id:document.getElementById('blockQuadra').value,data:document.getElementById('blockDate').value,horario:document.getElementById('blockTime').value,duracao:document.getElementById('blockDuration').value,motivo:document.getElementById('blockReason').value})});form.reset();document.getElementById('blockDate').value=new Date().toISOString().slice(0,10);await carregarBloqueios();alert('Horário bloqueado com sucesso.');}catch(e){alert(e.message||'Não foi possível bloquear o horário.');}});}
+  const settings=document.getElementById('settingsForm'); if(settings&&!settings.dataset.ready){settings.dataset.ready='1';settings.addEventListener('submit',salvarConfiguracoes);}
+  await carregarQuadrasAdmin(); await carregarBloqueios(); await carregarConfiguracoesAdmin();
+}
+
+async function refreshDashboard(){
+  const reservas = getReservations().filter(Boolean);
+  const despesas = getExpenses().filter(Boolean);
+
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const mesAtual = `${ano}-${mes}`;
+
+  // Receita: somente reservas CONFIRMADAS do mês atual.
+  const confirmadasMes = reservas.filter(r =>
+    String(r.status || '').toLowerCase() === 'confirmada' &&
+    String(r.data || '').slice(0, 7) === mesAtual
+  );
+
+  const receitaMes = confirmadasMes.reduce(
+    (total, r) => total + Number(r.valor || 0),
+    0
+  );
+
+  // Despesas cadastradas no mês atual.
+  const despesasMes = despesas
+    .filter(d => String(d.data || '').slice(0, 7) === mesAtual)
+    .reduce((total, d) => total + Number(d.valor || 0), 0);
+
+  const saldoMes = receitaMes - despesasMes;
+
+  const qtdConfirmadas = reservas.filter(
+    r => String(r.status || '').toLowerCase() === 'confirmada'
+  ).length;
+
+  const pendentes = reservas.filter(r =>
+    ['pendente', 'aguardando_comprovante'].includes(
+      String(r.status || '').toLowerCase()
+    )
+  );
+
+  document.getElementById('receita').textContent = money(receitaMes);
+  document.getElementById('despesasDashboard').textContent = money(despesasMes);
+  document.getElementById('lucro').textContent = money(saldoMes);
+  document.getElementById('qtdConfirmadas').textContent = qtdConfirmadas;
+  document.getElementById('qtdPendentes').textContent = pendentes.length;
+
+  const alertBox = document.getElementById('dashboardAlert');
+  if (alertBox) {
+    alertBox.classList.toggle('hidden', pendentes.length === 0);
+
+    if (pendentes.length) {
+      alertBox.innerHTML = `
+        <strong>⚠️ ${pendentes.length} reserva(s) aguardando confirmação/pagamento.</strong>
+        <button class="btn edit" onclick="document.querySelector('[data-section=reservas]').click()">Ver reservas</button>
+      `;
+    } else {
+      alertBox.innerHTML = '';
+    }
+  }
+
+  document.getElementById('financeInfo').innerHTML = `
+    <div style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between">
+        <span>Receita do mês</span>
+        <strong class="green">${money(receitaMes)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span>Despesas do mês</span>
+        <strong class="red">${money(despesasMes)}</strong>
+      </div>
+      <div style="height:1px;background:#eee"></div>
+      <div style="display:flex;justify-content:space-between;font-size:18px">
+        <span>Resultado</span>
+        <strong>${money(saldoMes)}</strong>
+      </div>
+    </div>
+  `;
+
+  const upcoming = reservas
+    .filter(r => {
+      const status = String(r.status || '').toLowerCase();
+
+      if (!['confirmada', 'aguardando_comprovante', 'pendente'].includes(status)) {
+        return false;
+      }
+
+      if (!r.data) return false;
+
+      const hora = String(r.hora_inicio || r.horario || '00:00').slice(0, 5);
+      const dataHora = new Date(`${r.data}T${hora}:00`);
+
+      return !Number.isNaN(dataHora.getTime()) && dataHora >= agora;
+    })
+    .sort((a, b) => {
+      const dataA = `${a.data}T${String(a.hora_inicio || a.horario || '00:00').slice(0, 5)}`;
+      const dataB = `${b.data}T${String(b.hora_inicio || b.horario || '00:00').slice(0, 5)}`;
+      return dataA.localeCompare(dataB);
+    })
+    .slice(0, 6);
+
+  document.getElementById('nextReservations').innerHTML = upcoming.length
+    ? upcoming.map(r => `
+        <div style="padding:10px 0;border-bottom:1px solid #eee">
+          <strong>${fmtDate(r.data)} · ${esc(r.hora_inicio || r.horario || '-')}</strong><br>
+          <span class="muted">
+            ${esc(r.nome || 'Cliente')} ·
+            ${Number(r.duracao || 0)}h ·
+            ${money(r.valor)} ·
+            ${labelStatus(r.status)}
+          </span>
+        </div>
+      `).join('')
+    : '<div class="empty">Nenhuma próxima reserva.</div>';
+}
+
+function refreshAll(){setupExpenseForm();refreshDashboard();renderReservas();renderCadastros();renderCalendar();renderExpenses();}
+(function bootAdmin(){
+  // Mantém o acesso enquanto a aba do navegador estiver aberta.
+  if(sessionStorage.getItem('champions_admin') === '1'){
+    openApp();
+  }else{
+    document.getElementById('loginView').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+  }
+})();
+</script>
+</body>
+</html>
