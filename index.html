@@ -1440,7 +1440,7 @@ img{max-width:100%;height:auto;display:block}
         </div>
         <div class="form-group">
           <label>Data do Jogo</label>
-          <input type="date" id="campo-data">
+          <input type="date" id="campo-data" onchange="atualizarHorariosDisponiveis()">
         </div>
         <div class="form-group">
           <label>Horário de Início</label>
@@ -1449,7 +1449,7 @@ img{max-width:100%;height:auto;display:block}
         </div>
         <div class="form-group">
           <label>Duração</label>
-          <select id="campo-duracao" onchange="calcularPreco()">
+          <select id="campo-duracao" onchange="calcularPreco(); atualizarHorariosDisponiveis()">
             <option value="1">1 hora — R$ 270</option>
             <option value="2">2 horas — R$ 540</option>
             <option value="3">3 horas — R$ 810</option>
@@ -1566,11 +1566,11 @@ img{max-width:100%;height:auto;display:block}
       <div class="form-section-title">Segurança</div>
       <div style="margin:-.5rem 0 1.25rem;padding:12px 14px;border:1px solid #cbd8ee;border-radius:10px;background:#f3f7ff;color:#234f88;font-size:.84rem;line-height:1.55;">
         <strong>Sua senha deve ter:</strong>
-        <br> mínimo de 12 caracteres
-        <br> Pelo menos uma letra maiúscula
-        <br> Pelo menos uma letra minúscula
-        <br> Pelo menos um número
-        <br> Pelo menos um símbolo (@, #, !, $, etc.)
+        <br>🔢 mínimo de 12 caracteres
+        <br>🔠 pelo menos uma letra maiúscula
+        <br>🔡 pelo menos uma letra minúscula
+        <br>🔢 pelo menos um número
+        <br>🔣 pelo menos um símbolo (@, #, !, $, etc.)
       </div>
 
       <div class="form-row">
@@ -1895,17 +1895,72 @@ img{max-width:100%;height:auto;display:block}
   function horariosConflitam(data, horario, duracao, ignorarId) {
     const dataNormalizada = normalizarData(data);
     const novo = intervaloReserva(horario, duracao);
-    if (!dataNormalizada || !Number.isFinite(novo.inicio)) return false;
 
-    const reservasLocal=reservasAtivas().filter(r=>String(r.data).slice(0,10)===dataNormalizada);
-    const ocupadas=(ocupacaoServidor||[]).filter(x => String(x.status || '').toLowerCase() !== 'recusada').map(x=>({id:'OCC-'+x.horario+'-'+x.origem,data:dataNormalizada,horario:x.horario,duracao:x.duracao,status:x.origem==='bloqueio'?'bloqueio':'confirmada'}));
-    return [...reservasLocal,...ocupadas].some(r => {
-      if (ignorarId && String(r.id) === String(ignorarId)) return false;
-      if (normalizarData(r.data) !== dataNormalizada) return false;
-      const existente = intervaloReserva(r.horario, r.duracao);
-      return intervalosSeSobrepoem(novo, existente);
+    if (!dataNormalizada || !Number.isFinite(novo.inicio)) {
+        return false;
+    }
+
+    const reservasLocal = reservasAtivas()
+        .filter(r =>
+            String(r.data).slice(0, 10) === dataNormalizada
+        );
+
+    const ocupadas = (ocupacaoServidor || [])
+        .filter(x =>
+            String(x.status || '').toLowerCase() !== 'recusada'
+        )
+        .map(x => ({
+            id: 'OCC-' + x.horario + '-' + x.origem,
+            data: dataNormalizada,
+            horario: x.horario,
+            duracao: x.duracao,
+            status: x.origem === 'bloqueio'
+                ? 'bloqueio'
+                : 'confirmada'
+        }));
+
+    return [...reservasLocal, ...ocupadas].some(r => {
+
+        if (
+            ignorarId &&
+            String(r.id) === String(ignorarId)
+        ) {
+            return false;
+        }
+
+        if (
+            normalizarData(r.data) !== dataNormalizada
+        ) {
+            return false;
+        }
+
+        // As reservas novas usam hora_inicio
+        const horarioExistente =
+            r.hora_inicio ||
+            r.horario ||
+            '';
+
+        const duracaoExistente =
+            normalizarDuracao(
+                r.duracao || 1
+            );
+
+        if (!horarioExistente) {
+            return false;
+        }
+
+        const existente =
+            intervaloReserva(
+                horarioExistente,
+                duracaoExistente
+            );
+
+        return intervalosSeSobrepoem(
+            novo,
+            existente
+        );
     });
-  }
+}
 
   function atualizarHorariosDisponiveis() {
     const grid = document.getElementById('horarios-disponiveis');
