@@ -2935,26 +2935,6 @@ async function copiarPix() {
     return usuarioAtual;
   }
 
-  async function salvarPerfilUsuario(user, perfil) {
-    const { data, error } = await supabaseClient
-      .from('usuarios')
-      .upsert({
-        id: user.id,
-        nome: perfil.nome,
-        sobrenome: perfil.sobrenome,
-        cpf: perfil.cpf,
-        data_nascimento: perfil.nascimento || null,
-        telefone: perfil.telefone,
-        interesse_campo: Boolean(perfil.campo),
-        interesse_mensalista: Boolean(perfil.mensalista),
-        interesse_promocoes: Boolean(perfil.promocoes)
-      }, { onConflict: 'id' })
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
   async function realizarCadastro() {
     const nome = document.getElementById('cad-nome').value.trim();
     const sobrenome = document.getElementById('cad-sobrenome').value.trim();
@@ -3027,7 +3007,8 @@ async function copiarPix() {
         return;
       }
 
-      await salvarPerfilUsuario(data.user, { nome, sobrenome, cpf, nascimento, telefone, campo, mensalista, promocoes });
+      // O perfil em public.usuarios já é criado automaticamente pelo trigger do Supabase.
+      // Não fazemos insert/upsert aqui para evitar conflito com a política RLS.
       const perfil = await carregarPerfilUsuario(data.user);
       if (!perfil) throw new Error('Perfil do usuário não encontrado.');
 
