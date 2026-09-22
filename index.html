@@ -2940,15 +2940,14 @@ async function copiarPix() {
       .from('usuarios')
       .upsert({
         id: user.id,
-        email: user.email || perfil.email,
         nome: perfil.nome,
         sobrenome: perfil.sobrenome,
         cpf: perfil.cpf,
-        nascimento: perfil.nascimento || null,
+        data_nascimento: perfil.nascimento || null,
         telefone: perfil.telefone,
-        campo: Boolean(perfil.campo),
-        mensalista: Boolean(perfil.mensalista),
-        promocoes: Boolean(perfil.promocoes)
+        interesse_campo: Boolean(perfil.campo),
+        interesse_mensalista: Boolean(perfil.mensalista),
+        interesse_promocoes: Boolean(perfil.promocoes)
       }, { onConflict: 'id' })
       .select()
       .single();
