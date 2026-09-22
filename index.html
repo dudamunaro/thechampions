@@ -1868,6 +1868,13 @@ let consulta = tabela
 
       <div class="divider"></div>
 
+      <div class="checkbox-item" style="align-items:flex-start;margin-bottom:1rem;">
+        <input type="checkbox" id="consentimento-dados" required style="margin-top:3px;">
+        <label for="consentimento-dados" style="line-height:1.5;">
+          Concordo com o armazenamento e tratamento dos meus dados pessoais para a criação da minha conta e utilização dos serviços da The Champions Laporte. Li e concordo com a <a href="privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+        </label>
+      </div>
+
       <button class="btn-alugar" onclick="realizarCadastro()" style="font-size: 1rem; padding: 16px;">
         Criar minha conta
       </button>
@@ -1959,6 +1966,13 @@ let consulta = tabela
         <label for="google-int-mensalista">Tenho interesse em ser mensalista</label>
       </div>
       
+    </div>
+
+    <div class="checkbox-item" style="align-items:flex-start;margin-top:18px;">
+      <input type="checkbox" id="google-consentimento-dados" required style="margin-top:3px;">
+      <label for="google-consentimento-dados" style="line-height:1.5;">
+        Concordo com o armazenamento e tratamento dos meus dados pessoais para a criação da minha conta e utilização dos serviços da The Champions Laporte. Li e concordo com a <a href="privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+      </label>
     </div>
 
     <button type="button" class="btn-alugar" onclick="salvarComplementoGoogle()" style="width:100%;margin-top:18px;">
@@ -2948,9 +2962,15 @@ async function copiarPix() {
     const campo = document.getElementById('int-campo')?.checked || false;
     const mensalista = document.getElementById('int-mensalista')?.checked || false;
     const promocoes = document.getElementById('int-promo')?.checked || false;
+    const consentimentoDados = document.getElementById('consentimento-dados')?.checked || false;
 
     if (!nome || !email || !cpf || !telefone || !senha) {
       mostrarToast('Preencha nome, e-mail, CPF, telefone e senha.');
+      return;
+    }
+
+    if (!consentimentoDados) {
+      mostrarToast('Para criar sua conta, é necessário concordar com o tratamento dos dados informado na Política de Privacidade.');
       return;
     }
 
@@ -2992,7 +3012,9 @@ async function copiarPix() {
             telefone,
             campo,
             mensalista,
-            promocoes
+            promocoes,
+            aceitou_termos: true,
+            consentimento_em: new Date().toISOString()
           }
         }
       });
@@ -3012,7 +3034,7 @@ async function copiarPix() {
       const perfil = await carregarPerfilUsuario(data.user);
       if (!perfil) throw new Error('Perfil do usuário não encontrado.');
 
-      mostrarToast('Cadastro realizado! Seu número é #' + perfil.numero);
+      mostrarToast('Cadastro realizado com sucesso!');
       atualizarContaUI();
 
       setTimeout(() => showPage('home'), 1200);
@@ -3112,9 +3134,16 @@ async function copiarPix() {
     const campo = document.getElementById('google-int-campo')?.checked || false;
     const mensalista = document.getElementById('google-int-mensalista')?.checked || false;
     const promocoes = document.getElementById('google-int-promo')?.checked || false;
+    const consentimentoDados = document.getElementById('google-consentimento-dados')?.checked || false;
 
     if (!nome || !cpf || !nascimento || !telefone) {
       msg.textContent = 'Preencha nome, CPF, data de nascimento e telefone.';
+      msg.style.color = '#b3261e';
+      return;
+    }
+
+    if (!consentimentoDados) {
+      msg.textContent = 'Para concluir o cadastro, é necessário concordar com o tratamento dos dados informado na Política de Privacidade.';
       msg.style.color = '#b3261e';
       return;
     }
@@ -3149,7 +3178,9 @@ async function copiarPix() {
           telefone,
           interesse_campo: campo,
           interesse_mensalista: mensalista,
-          interesse_promocoes: promocoes
+          interesse_promocoes: promocoes,
+          aceitou_termos: true,
+          consentimento_em: new Date().toISOString()
         })
         .eq('id', user.id)
         .select()
@@ -3215,7 +3246,7 @@ async function copiarPix() {
       const cadastro = await carregarPerfilUsuario(data.user);
       if (!cadastro) throw new Error('Perfil não encontrado.');
 
-      msg.textContent = 'Login realizado! Cadastro #' + cadastro.numero;
+      msg.textContent = 'Login realizado com sucesso!';
       msg.style.color = '#16824b';
       atualizarContaUI();
 
@@ -3283,7 +3314,7 @@ async function copiarPix() {
     if (!el) return;
 
     if (u) {
-      el.innerHTML = '#' + u.numero + ' · ' + String(u.nomeCompleto || u.nome).split(' ')[0] +
+      el.innerHTML = String(u.nomeCompleto || u.nome).split(' ')[0] +
         ' <button onclick="sairContaCliente()" style="border:0;background:none;color:inherit;cursor:pointer;">Sair</button>';
     } else {
       el.innerHTML = '';
