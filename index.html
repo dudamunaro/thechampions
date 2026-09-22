@@ -3188,9 +3188,10 @@ async function copiarPix() {
 
       if (error) throw error;
 
-      if (!data) {
-        throw new Error('O perfil não pôde ser atualizado. Verifique as permissões da tabela usuarios.');
-      }
+      if (error) {
+  console.error('ERRO REAL AO ATUALIZAR USUARIO:', error);
+  throw new Error(error.message);
+}
 
       await carregarPerfilUsuario(user);
       fecharComplementoGoogle();
