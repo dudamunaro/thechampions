@@ -3062,8 +3062,22 @@ async function copiarPix() {
     const cpf = String(perfil.cpf || '').trim();
     const telefone = String(perfil.telefone || '').trim();
     const nascimento = String(perfil.data_nascimento || perfil.nascimento || '').trim();
+    const consentimento = perfil.aceitou_termos === true;
 
-    return !cpf || !telefone || !nascimento;
+    return !cpf || !telefone || !nascimento || !consentimento;
+  }
+
+  function usuarioTemIdentidadeGoogle(user) {
+    if (!user) return false;
+
+    const identities = Array.isArray(user.identities) ? user.identities : [];
+    const providers = Array.isArray(user.app_metadata?.providers)
+      ? user.app_metadata.providers
+      : [];
+
+    return identities.some(identity => identity?.provider === 'google') ||
+      providers.includes('google') ||
+      user.app_metadata?.provider === 'google';
   }
 
   function abrirComplementoGoogle(user, perfil = {}) {
@@ -3277,13 +3291,20 @@ async function copiarPix() {
       if (session?.user) {
         const perfil = await carregarPerfilUsuario(session.user);
 
-        const provider =
-          session.user.app_metadata?.provider ||
-          session.user.identities?.[0]?.provider ||
-          '';
+        // O Supabase pode vincular automaticamente a identidade Google a uma
+        // conta existente com o mesmo e-mail verificado. Por isso não usamos
+        // apenas app_metadata.provider: uma conta criada com senha pode passar
+        // a ter também a identidade Google sem deixar de ser a mesma conta.
+        const temGoogle = usuarioTemIdentidadeGoogle(session.user);
 
-        if (provider === 'google' && perfilGoogleIncompleto(perfil)) {
+        // Só pede complemento quando o perfil realmente está incompleto.
+        // Se a pessoa já se cadastrou normalmente e depois entrou com Google
+        // usando o mesmo e-mail, seus dados existentes são mantidos e ela entra
+        // direto no site.
+        if (temGoogle && perfilGoogleIncompleto(perfil)) {
           abrirComplementoGoogle(session.user, perfil || {});
+        } else {
+          fecharComplementoGoogle();
         }
       } else {
         usuarioAtual = null;
