@@ -3574,9 +3574,9 @@ async function copiarPix() {
       document.getElementById('btn-abrir-assinatura')
         ?.setAttribute('disabled', 'disabled');
 
-      if (!cardFormPlano) {
-        inicializarCardFormPlano();
-      }
+      // Cada abertura do checkout começa com uma instância nova.
+      // Isso evita reaproveitar um CardToken de uma tentativa anterior.
+      reiniciarCardFormPlano();
 
       checkout.scrollIntoView({
         behavior: 'smooth',
@@ -3593,6 +3593,49 @@ async function copiarPix() {
         'Não foi possível abrir o formulário de assinatura.'
       );
     }
+  }
+
+  function reiniciarCardFormPlano() {
+    try {
+      if (
+        cardFormPlano &&
+        typeof cardFormPlano.unmount === 'function'
+      ) {
+        cardFormPlano.unmount();
+      }
+    } catch (erro) {
+      console.warn(
+        'Não foi possível desmontar o CardForm anterior:',
+        erro
+      );
+    }
+
+    cardFormPlano = null;
+
+    const form =
+      document.getElementById('form-checkout');
+
+    if (form) {
+      form.reset();
+    }
+
+    const emailInput =
+      document.getElementById(
+        'form-checkout__cardholderEmail'
+      );
+
+    supabaseClient.auth.getSession()
+      .then(({ data }) => {
+        if (
+          emailInput &&
+          data?.session?.user?.email
+        ) {
+          emailInput.value =
+            data.session.user.email;
+        }
+      });
+
+    inicializarCardFormPlano();
   }
 
   function inicializarCardFormPlano() {
@@ -3684,7 +3727,13 @@ async function copiarPix() {
                 'form-checkout__submit'
               );
 
+            if (!botao || botao.disabled) {
+              return;
+            }
+
             try {
+              // Bloqueia imediatamente novas tentativas enquanto
+              // esta requisição estiver em andamento.
               botao.disabled = true;
               botao.textContent =
                 'Processando assinatura...';
@@ -3715,6 +3764,18 @@ async function copiarPix() {
                 erro?.message ||
                 'Não foi possível processar os dados do cartão.'
               );
+
+              // O CardToken do Mercado Pago é de uso único.
+              // Após uma tentativa, descartamos a instância anterior
+              // para que o próximo envio gere um token novo.
+              try {
+                reiniciarCardFormPlano();
+              } catch (resetErro) {
+                console.error(
+                  'Erro ao reiniciar formulário:',
+                  resetErro
+                );
+              }
 
               botao.disabled = false;
               botao.textContent =
