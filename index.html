@@ -1524,6 +1524,31 @@ img{max-width:100%;height:auto;display:block}
     gap: 12px !important;
   }
 
+
+  /* ===== IDENTIFICAÇÃO DO ASSINANTE ===== */
+  .mp-email-conta {
+    display: grid;
+    gap: 6px;
+  }
+
+  .mp-email-label {
+    color: rgba(255,255,255,.86);
+    font-size: .78rem;
+    font-weight: 700;
+  }
+
+  #form-checkout__cardholderEmail[readonly] {
+    background: #eef1f6 !important;
+    color: #4a4d58 !important;
+    cursor: not-allowed;
+  }
+
+  .mp-email-conta small {
+    color: rgba(255,255,255,.62);
+    font-size: .72rem;
+    line-height: 1.45;
+  }
+
 </style>
   <!-- Supabase: autenticação segura -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1764,11 +1789,20 @@ let consulta = tabela
                 placeholder="CPF do titular">
             </div>
 
-            <input
-              type="email"
-              id="form-checkout__cardholderEmail"
-              placeholder="E-mail"
-              autocomplete="email">
+            <div class="mp-email-conta">
+              <span class="mp-email-label">Assinatura para</span>
+              <input
+                type="email"
+                id="form-checkout__cardholderEmail"
+                placeholder="E-mail da conta The Champions"
+                autocomplete="email"
+                readonly
+                aria-readonly="true">
+              <small>
+                Esta assinatura ficará vinculada à conta The Champions que está logada.
+                Para assinar para outra pessoa, saia desta conta e entre na conta dela.
+              </small>
+            </div>
 
             <button
               type="submit"
@@ -3732,6 +3766,32 @@ async function copiarPix() {
             }
 
             try {
+              // Confirma novamente qual conta The Champions está logada.
+              const { data: { session }, error: sessionError } =
+                await supabaseClient.auth.getSession();
+
+              if (sessionError) {
+                throw sessionError;
+              }
+
+              if (!session?.user?.email) {
+                mostrarToast(
+                  'Sua sessão expirou. Entre novamente.'
+                );
+                showPage('login');
+                return;
+              }
+
+              const emailConta =
+                document.getElementById(
+                  'form-checkout__cardholderEmail'
+                );
+
+              if (emailConta) {
+                emailConta.value =
+                  session.user.email;
+              }
+
               // Bloqueia imediatamente novas tentativas enquanto
               // esta requisição estiver em andamento.
               botao.disabled = true;
