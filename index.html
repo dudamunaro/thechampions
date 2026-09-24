@@ -1488,6 +1488,42 @@ img{max-width:100%;height:auto;display:block}
     .mp-duas-colunas { grid-template-columns: 1fr; }
   }
 
+
+  /* ===== AJUSTE VISUAL DOS CAMPOS SEGUROS DO MERCADO PAGO ===== */
+  #form-checkout__cardNumber,
+  #form-checkout__expirationDate,
+  #form-checkout__securityCode {
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: block !important;
+  }
+
+  #form-checkout__cardNumber iframe,
+  #form-checkout__expirationDate iframe,
+  #form-checkout__securityCode iframe {
+    width: 100% !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    display: block !important;
+    border: 0 !important;
+  }
+
+  #form-checkout input,
+  #form-checkout select {
+    height: 46px !important;
+    min-height: 46px !important;
+  }
+
+  #form-checkout {
+    gap: 12px !important;
+  }
+
+  .mp-duas-colunas {
+    gap: 12px !important;
+  }
+
 </style>
   <!-- Supabase: autenticação segura -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
