@@ -1403,9 +1403,95 @@ img{max-width:100%;height:auto;display:block}
     }
   }
 
+
+  /* ===== CHECKOUT DO PLANO MENSAL / MERCADO PAGO ===== */
+  .plano-checkout {
+    display: none;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,.16);
+  }
+
+  .plano-checkout.ativo { display: block; }
+
+  .plano-checkout h3 {
+    margin: 0 0 .45rem;
+    color: var(--branco);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.25rem;
+  }
+
+  .plano-checkout-texto {
+    color: rgba(255,255,255,.7);
+    font-size: .82rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  #form-checkout {
+    display: grid;
+    gap: .85rem;
+  }
+
+  .mp-campo,
+  #form-checkout input,
+  #form-checkout select {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 10px;
+    background: #fff;
+    color: #14161f;
+    padding: 0 12px;
+    font: inherit;
+  }
+
+  .mp-campo {
+    padding: 12px;
+  }
+
+  .mp-duas-colunas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .85rem;
+  }
+
+  #form-checkout__submit {
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--dourado);
+    color: var(--marrom);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  #form-checkout__submit:disabled {
+    opacity: .65;
+    cursor: wait;
+  }
+
+  .mp-progress {
+    width: 100%;
+    height: 4px;
+  }
+
+  .mp-seguranca {
+    color: rgba(255,255,255,.62);
+    font-size: .74rem;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 560px) {
+    .mp-duas-colunas { grid-template-columns: 1fr; }
+  }
+
 </style>
   <!-- Supabase: autenticação segura -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script>
     const SUPABASE_URL = 'https://owcdcpdzifcpafmtjhrw.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable__xOvIL5F1tAUNO_hN3f7TA_EZx0ejrE';
@@ -1604,9 +1690,69 @@ let consulta = tabela
         <button
           type="button"
           class="btn-alugar"
-          onclick="assinarPlanoMensal()">
+          id="btn-abrir-assinatura"
+          onclick="abrirCheckoutPlanoMensal()">
           Assinar plano mensal
         </button>
+
+        <div class="plano-checkout" id="plano-checkout">
+          <h3>Dados do cartão</h3>
+          <p class="plano-checkout-texto">
+            A assinatura é de R$ 1.200 por mês e possui renovação automática.
+          </p>
+
+          <form id="form-checkout">
+            <div id="form-checkout__cardNumber" class="mp-campo"></div>
+
+            <div class="mp-duas-colunas">
+              <div id="form-checkout__expirationDate" class="mp-campo"></div>
+              <div id="form-checkout__securityCode" class="mp-campo"></div>
+            </div>
+
+            <input
+              type="text"
+              id="form-checkout__cardholderName"
+              placeholder="Nome do titular"
+              autocomplete="cc-name">
+
+            <select id="form-checkout__issuer"></select>
+
+            <select id="form-checkout__installments"></select>
+
+            <div class="mp-duas-colunas">
+              <select id="form-checkout__identificationType"></select>
+
+              <input
+                type="text"
+                id="form-checkout__identificationNumber"
+                placeholder="CPF do titular">
+            </div>
+
+            <input
+              type="email"
+              id="form-checkout__cardholderEmail"
+              placeholder="E-mail"
+              autocomplete="email">
+
+            <button
+              type="submit"
+              id="form-checkout__submit">
+              Confirmar assinatura
+            </button>
+
+            <progress
+              value="0"
+              class="mp-progress"
+              id="mp-progress">
+              Carregando...
+            </progress>
+
+            <p class="mp-seguranca">
+              Os dados do cartão são processados pelo Mercado Pago.
+              O The Champions Laporte recebe somente o token seguro do cartão.
+            </p>
+          </form>
+        </div>
 
         <p class="plano-aviso">
           É necessário estar logado para iniciar a assinatura.
@@ -3358,14 +3504,18 @@ async function copiarPix() {
   if (campoData) campoData.min = today;
   atualizarContaUI();
 
-  async function assinarPlanoMensal() {
+  const MERCADO_PAGO_PUBLIC_KEY =
+    'APP_USR-670bff28-66ab-4c85-b3e2-2dadae3a895a';
+
+  let mercadoPagoPlano = null;
+  let cardFormPlano = null;
+
+  async function abrirCheckoutPlanoMensal() {
     try {
-      const { data: { session }, error: sessionError } =
+      const { data: { session }, error } =
         await supabaseClient.auth.getSession();
 
-      if (sessionError) {
-        throw sessionError;
-      }
+      if (error) throw error;
 
       if (!session?.user) {
         mostrarToast('Faça login para assinar o plano mensal.');
@@ -3373,63 +3523,263 @@ async function copiarPix() {
         return;
       }
 
-      const usuario = session.user;
+      const checkout =
+        document.getElementById('plano-checkout');
 
-      mostrarToast('Preparando sua assinatura...');
+      checkout.classList.add('ativo');
 
-      const { data, error } =
-        await supabaseClient.functions.invoke(
-          'criar-assinatura',
-          {
-            body: {
-              usuario_id: usuario.id,
-              email: usuario.email
-            }
-          }
-        );
+      const emailInput =
+        document.getElementById('form-checkout__cardholderEmail');
 
-      if (error) {
-        console.error(
-          'Erro ao chamar criar-assinatura:',
-          error
-        );
-        throw error;
+      if (emailInput && session.user.email) {
+        emailInput.value = session.user.email;
       }
 
-      if (!data?.ok) {
-        console.error(
-          'Erro retornado pela função:',
-          data
-        );
+      document.getElementById('btn-abrir-assinatura')
+        ?.setAttribute('disabled', 'disabled');
 
-        throw new Error(
-          data?.error ||
-          'Não foi possível iniciar a assinatura.'
-        );
+      if (!cardFormPlano) {
+        inicializarCardFormPlano();
       }
 
-      if (!data?.init_point) {
-        console.error(
-          'Resposta sem init_point:',
-          data
-        );
-
-        throw new Error(
-          'O Mercado Pago não retornou o link de pagamento.'
-        );
-      }
-
-      window.location.href = data.init_point;
+      checkout.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
 
     } catch (erro) {
       console.error(
-        'Erro ao iniciar assinatura:',
+        'Erro ao abrir checkout do plano:',
         erro
       );
 
       mostrarToast(
-        'Não foi possível iniciar a assinatura. Tente novamente.'
+        'Não foi possível abrir o formulário de assinatura.'
       );
+    }
+  }
+
+  function inicializarCardFormPlano() {
+    if (typeof MercadoPago === 'undefined') {
+      mostrarToast(
+        'Não foi possível carregar o Mercado Pago.'
+      );
+      return;
+    }
+
+    mercadoPagoPlano =
+      new MercadoPago(
+        MERCADO_PAGO_PUBLIC_KEY
+      );
+
+    cardFormPlano =
+      mercadoPagoPlano.cardForm({
+        amount: '1200',
+        iframe: true,
+
+        form: {
+          id: 'form-checkout',
+
+          cardNumber: {
+            id: 'form-checkout__cardNumber',
+            placeholder: 'Número do cartão'
+          },
+
+          expirationDate: {
+            id: 'form-checkout__expirationDate',
+            placeholder: 'MM/AA'
+          },
+
+          securityCode: {
+            id: 'form-checkout__securityCode',
+            placeholder: 'CVV'
+          },
+
+          cardholderName: {
+            id: 'form-checkout__cardholderName',
+            placeholder: 'Nome do titular'
+          },
+
+          issuer: {
+            id: 'form-checkout__issuer',
+            placeholder: 'Banco emissor'
+          },
+
+          installments: {
+            id: 'form-checkout__installments',
+            placeholder: 'Parcelas'
+          },
+
+          identificationType: {
+            id: 'form-checkout__identificationType',
+            placeholder: 'Tipo de documento'
+          },
+
+          identificationNumber: {
+            id: 'form-checkout__identificationNumber',
+            placeholder: 'CPF do titular'
+          },
+
+          cardholderEmail: {
+            id: 'form-checkout__cardholderEmail',
+            placeholder: 'E-mail'
+          }
+        },
+
+        callbacks: {
+          onFormMounted: error => {
+            if (error) {
+              console.error(
+                'Erro ao carregar CardForm:',
+                error
+              );
+
+              mostrarToast(
+                'Não foi possível carregar o formulário do cartão.'
+              );
+            }
+          },
+
+          onSubmit: async event => {
+            event.preventDefault();
+
+            const botao =
+              document.getElementById(
+                'form-checkout__submit'
+              );
+
+            try {
+              botao.disabled = true;
+              botao.textContent =
+                'Processando assinatura...';
+
+              const dados =
+                cardFormPlano.getCardFormData();
+
+              const cardTokenId =
+                String(dados.token || '').trim();
+
+              if (!cardTokenId) {
+                throw new Error(
+                  'O Mercado Pago não gerou o token do cartão.'
+                );
+              }
+
+              await assinarPlanoMensal(
+                cardTokenId
+              );
+
+            } catch (erro) {
+              console.error(
+                'Erro no formulário da assinatura:',
+                erro
+              );
+
+              mostrarToast(
+                erro?.message ||
+                'Não foi possível processar os dados do cartão.'
+              );
+
+              botao.disabled = false;
+              botao.textContent =
+                'Confirmar assinatura';
+            }
+          },
+
+          onFetching: () => {
+            const progress =
+              document.getElementById(
+                'mp-progress'
+              );
+
+            if (progress) {
+              progress.removeAttribute(
+                'value'
+              );
+            }
+
+            return () => {
+              if (progress) {
+                progress.setAttribute(
+                  'value',
+                  '0'
+                );
+              }
+            };
+          }
+        }
+      });
+  }
+
+  async function assinarPlanoMensal(
+    cardTokenId
+  ) {
+    const { data: { session }, error: sessionError } =
+      await supabaseClient.auth.getSession();
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    if (!session?.user) {
+      mostrarToast(
+        'Sua sessão expirou. Entre novamente.'
+      );
+
+      showPage('login');
+      return;
+    }
+
+    const { data, error } =
+      await supabaseClient.functions.invoke(
+        'criar-assinatura',
+        {
+          body: {
+            card_token_id: cardTokenId
+          }
+        }
+      );
+
+    if (error) {
+      console.error(
+        'Erro ao chamar criar-assinatura:',
+        error
+      );
+
+      let mensagem =
+        'Não foi possível criar a assinatura.';
+
+      try {
+        const contexto =
+          await error.context?.json();
+
+        if (contexto?.error) {
+          mensagem = contexto.error;
+        }
+      } catch (_) {}
+
+      throw new Error(mensagem);
+    }
+
+    if (!data?.ok) {
+      throw new Error(
+        data?.error ||
+        'Não foi possível criar a assinatura.'
+      );
+    }
+
+    mostrarToast(
+      'Assinatura criada com sucesso!'
+    );
+
+    const botao =
+      document.getElementById(
+        'form-checkout__submit'
+      );
+
+    if (botao) {
+      botao.textContent =
+        'Assinatura criada';
     }
   }
 </script>
