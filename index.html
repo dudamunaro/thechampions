@@ -3358,20 +3358,80 @@ async function copiarPix() {
   if (campoData) campoData.min = today;
   atualizarContaUI();
 
-  function assinarPlanoMensal() {
-  const usuario = getUsuarioAtual();
+  async function assinarPlanoMensal() {
+    try {
+      const { data: { session }, error: sessionError } =
+        await supabaseClient.auth.getSession();
 
-  if (!usuario) {
-    mostrarToast('Faça login para assinar o plano mensal.');
-    showPage('login');
-    return;
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session?.user) {
+        mostrarToast('Faça login para assinar o plano mensal.');
+        showPage('login');
+        return;
+      }
+
+      const usuario = session.user;
+
+      mostrarToast('Preparando sua assinatura...');
+
+      const { data, error } =
+        await supabaseClient.functions.invoke(
+          'criar-assinatura',
+          {
+            body: {
+              usuario_id: usuario.id,
+              email: usuario.email
+            }
+          }
+        );
+
+      if (error) {
+        console.error(
+          'Erro ao chamar criar-assinatura:',
+          error
+        );
+        throw error;
+      }
+
+      if (!data?.ok) {
+        console.error(
+          'Erro retornado pela função:',
+          data
+        );
+
+        throw new Error(
+          data?.error ||
+          'Não foi possível iniciar a assinatura.'
+        );
+      }
+
+      if (!data?.init_point) {
+        console.error(
+          'Resposta sem init_point:',
+          data
+        );
+
+        throw new Error(
+          'O Mercado Pago não retornou o link de pagamento.'
+        );
+      }
+
+      window.location.href = data.init_point;
+
+    } catch (erro) {
+      console.error(
+        'Erro ao iniciar assinatura:',
+        erro
+      );
+
+      mostrarToast(
+        'Não foi possível iniciar a assinatura. Tente novamente.'
+      );
+    }
   }
-
-  const PLANO_MENSAL_URL =
-    'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=454cb3eee9af422d91410b47fe1352da';
-
-  window.location.href = PLANO_MENSAL_URL;
-}
 </script>
 </body>
 </html>
