@@ -3608,9 +3608,12 @@ async function copiarPix() {
       document.getElementById('btn-abrir-assinatura')
         ?.setAttribute('disabled', 'disabled');
 
-      // Cada abertura do checkout começa com uma instância nova.
-      // Isso evita reaproveitar um CardToken de uma tentativa anterior.
-      reiniciarCardFormPlano();
+      // Inicializa apenas uma vez enquanto o usuário preenche o cartão.
+      // Os campos de cartão são iframes seguros do Mercado Pago e não
+      // podem ser desmontados antes da geração do token.
+      if (!cardFormPlano) {
+        inicializarCardFormPlano();
+      }
 
       checkout.scrollIntoView({
         behavior: 'smooth',
@@ -3629,7 +3632,9 @@ async function copiarPix() {
     }
   }
 
-  function reiniciarCardFormPlano() {
+  async function prepararNovaTentativaPlano() {
+    // Um CardToken do Mercado Pago é de uso único.
+    // Esta função só é chamada APÓS a tentativa atual terminar.
     try {
       if (
         cardFormPlano &&
@@ -3653,21 +3658,27 @@ async function copiarPix() {
       form.reset();
     }
 
+    // Dá tempo para os iframes anteriores serem removidos antes
+    // de montar uma nova instância.
+    await new Promise(resolve =>
+      setTimeout(resolve, 100)
+    );
+
+    const { data: { session } } =
+      await supabaseClient.auth.getSession();
+
     const emailInput =
       document.getElementById(
         'form-checkout__cardholderEmail'
       );
 
-    supabaseClient.auth.getSession()
-      .then(({ data }) => {
-        if (
-          emailInput &&
-          data?.session?.user?.email
-        ) {
-          emailInput.value =
-            data.session.user.email;
-        }
-      });
+    if (
+      emailInput &&
+      session?.user?.email
+    ) {
+      emailInput.value =
+        session.user.email;
+    }
 
     inicializarCardFormPlano();
   }
@@ -3829,17 +3840,24 @@ async function copiarPix() {
               // Após uma tentativa, descartamos a instância anterior
               // para que o próximo envio gere um token novo.
               try {
-                reiniciarCardFormPlano();
+                await prepararNovaTentativaPlano();
               } catch (resetErro) {
                 console.error(
-                  'Erro ao reiniciar formulário:',
+                  'Erro ao preparar nova tentativa:',
                   resetErro
                 );
               }
 
-              botao.disabled = false;
-              botao.textContent =
-                'Confirmar assinatura';
+              const novoBotao =
+                document.getElementById(
+                  'form-checkout__submit'
+                );
+
+              if (novoBotao) {
+                novoBotao.disabled = false;
+                novoBotao.textContent =
+                  'Confirmar assinatura';
+              }
             }
           },
 
