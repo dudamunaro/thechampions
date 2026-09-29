@@ -3575,7 +3575,7 @@ async function copiarPix() {
   atualizarContaUI();
 
   const MERCADO_PAGO_PUBLIC_KEY =
-    'APP_USR-e3c1dd91-8020-4bd7-bb2d-42ace6fc594d';
+    'APP_USR-670bff28-66ab-4c85-b3e2-2dadae3a895a';
 
   let mercadoPagoPlano = null;
   let cardFormPlano = null;
@@ -3907,7 +3907,7 @@ async function copiarPix() {
 
     const { data, error } =
       await supabaseClient.functions.invoke(
-        'criar-assinatura-teste',
+        'criar-assinatura',
         {
           body: {
             card_token_id: cardTokenId
@@ -3917,7 +3917,7 @@ async function copiarPix() {
 
     if (error) {
       console.error(
-        'Erro ao chamar criar-assinatura-teste:',
+        'Erro ao chamar criar-assinatura:',
         error
       );
 
